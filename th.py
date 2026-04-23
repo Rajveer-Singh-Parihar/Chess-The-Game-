@@ -1,5 +1,7 @@
 from fastapi import FastAPI
+from Board import GameState
 app = FastAPI()
+game = GameState()
 class GameState():
     def __init__(self):
         self.board=[
@@ -15,3 +17,8 @@ class GameState():
 @app.get("/")
 def home():
     return {"message" : "Chess API running"}
+
+@app.get("/board")
+def get_board():
+    return {"board": game.board}
+    
