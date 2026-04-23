@@ -7,10 +7,13 @@ from string import ascii_uppercase, digits
 from threading import Lock
 from time import time
 from typing import Optional
+import os
 
 import chess
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Premium Chess API", version="1.0.0")
@@ -356,13 +359,14 @@ def ensure_room_membership(room: RoomRecord, player_token: str) -> str:
     raise HTTPException(status_code=403, detail="You are not a member of this room.")
 
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="public"), name="static")
+
+
+# Serve index.html for root and unknown routes
 @app.get("/")
-def root() -> dict[str, str]:
-    return {
-        "name": "Premium Chess API",
-        "status": "ok",
-        "routes": "/health, /best-move, /validate-move, /rooms/create, /rooms/{room_code}",
-    }
+def root() -> FileResponse:
+    return FileResponse("public/index.html")
 
 
 @app.get("/health")
@@ -370,7 +374,7 @@ def health() -> dict[str, str]:
     return {"status": "healthy"}
 
 
-@app.post("/best-move", response_model=BestMoveResponse)
+@app.post("/api/best-move", response_model=BestMoveResponse)
 def best_move(payload: BestMoveRequest) -> BestMoveResponse:
     board = load_board(payload.fen)
     move, evaluation = compute_best_move(board, payload.depth)
@@ -387,7 +391,7 @@ def best_move(payload: BestMoveRequest) -> BestMoveResponse:
     )
 
 
-@app.post("/validate-move", response_model=ValidateMoveResponse)
+@app.post("/api/validate-move", response_model=ValidateMoveResponse)
 def validate_move(payload: ValidateMoveRequest) -> ValidateMoveResponse:
     board = load_board(payload.fen)
 
@@ -411,7 +415,7 @@ def validate_move(payload: ValidateMoveRequest) -> ValidateMoveResponse:
     )
 
 
-@app.post("/rooms/create", response_model=RoomSessionResponse)
+@app.post("/api/rooms/create", response_model=RoomSessionResponse)
 def create_room(payload: RoomCreateRequest) -> RoomSessionResponse:
     with ROOMS_LOCK:
         purge_stale_rooms()
@@ -431,7 +435,7 @@ def create_room(payload: RoomCreateRequest) -> RoomSessionResponse:
     )
 
 
-@app.post("/rooms/join", response_model=RoomSessionResponse)
+@app.post("/api/rooms/join", response_model=RoomSessionResponse)
 def join_room(payload: RoomJoinRequest) -> RoomSessionResponse:
     with ROOMS_LOCK:
         purge_stale_rooms()
@@ -453,7 +457,7 @@ def join_room(payload: RoomJoinRequest) -> RoomSessionResponse:
     )
 
 
-@app.get("/rooms/{room_code}", response_model=RoomStateResponse)
+@app.get("/api/rooms/{room_code}", response_model=RoomStateResponse)
 def get_room(room_code: str) -> RoomStateResponse:
     with ROOMS_LOCK:
         purge_stale_rooms()
@@ -461,7 +465,7 @@ def get_room(room_code: str) -> RoomStateResponse:
         return build_room_snapshot(room)
 
 
-@app.post("/rooms/{room_code}/sync", response_model=RoomStateResponse)
+@app.post("/api/rooms/{room_code}/sync", response_model=RoomStateResponse)
 def sync_room(room_code: str, payload: RoomSyncRequest) -> RoomStateResponse:
     with ROOMS_LOCK:
         purge_stale_rooms()
@@ -476,7 +480,7 @@ def sync_room(room_code: str, payload: RoomSyncRequest) -> RoomStateResponse:
         return build_room_snapshot(room)
 
 
-@app.post("/rooms/{room_code}/leave")
+@app.post("/api/rooms/{room_code}/leave")
 def leave_room(room_code: str, payload: RoomLeaveRequest) -> dict[str, str]:
     with ROOMS_LOCK:
         purge_stale_rooms()
@@ -492,3 +496,9 @@ def leave_room(room_code: str, payload: RoomLeaveRequest) -> dict[str, str]:
         room.version += 1
         room.updated_at = time()
         return {"status": "left"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess The Game | Premium Edition</title>
+    <meta
+      name="description"
+      content="A premium browser chess experience with human play, AI, and gesture controls."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            boxShadow: {
+              soft: "0 24px 80px rgba(15, 23, 42, 0.18)",
+            },
+            colors: {
+              brand: {
+                50: "#fff9f1",
+                400: "#ff9a62",
+                500: "#f97316",
+                700: "#c2410c",
+              },
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body data-theme="light">
+    <div class="page-noise"></div>
+    <div class="bg-orb orb-left"></div>
+    <div class="bg-orb orb-right"></div>
+
+    <main class="relative mx-auto min-h-screen max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <header class="panel hero-panel">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div class="space-y-4">
+            <span class="eyebrow">Premium browser chess</span>
+            <div class="space-y-3">
+              <h1 class="hero-title">Chess The Game</h1>
+              <p class="hero-copy">
+                Human vs AI and webcam gesture control in one polished premium chess experience.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div class="metric-card">
+              <span class="metric-label">Game Mode</span>
+              <strong id="headerMode" class="metric-value">Human vs AI</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Engine Status</span>
+              <strong id="apiStatusBadge" class="metric-value status-online">Checking...</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Interaction</span>
+              <strong id="gestureStatusBadge" class="metric-value">Mouse / Touch</strong>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div class="space-y-6">
+          <section class="panel board-panel">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="section-kicker">Board</p>
+                <h2 class="section-title">Glass-grid battle table</h2>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <span id="turnPill" class="turn-pill">White to move</span>
+                <span id="statusPill" class="status-pill">Opening ready</span>
+              </div>
+            </div>
+
+            <div class="mt-6 board-shell">
+              <div class="player-deck">
+                <article id="whitePlayerCard" class="player-card">
+                  <div class="player-avatar player-avatar-light">W</div>
+                  <div class="player-meta">
+                    <span class="player-role">White side</span>
+                    <strong id="whitePlayerName" class="player-name">You</strong>
+                  </div>
+                  <span id="whitePlayerBadge" class="player-badge">Ready</span>
+                </article>
+
+                <div class="versus-chip">
+                  <span>VS</span>
+                </div>
+
+                <article id="blackPlayerCard" class="player-card">
+                  <div class="player-avatar player-avatar-dark">B</div>
+                  <div class="player-meta">
+                    <span class="player-role">Black side</span>
+                    <strong id="blackPlayerName" class="player-name">AI Rival</strong>
+                  </div>
+                  <span id="blackPlayerBadge" class="player-badge">Waiting</span>
+                </article>
+              </div>
+
+              <div id="board" class="chessboard" aria-label="Interactive chessboard"></div>
+              <div id="dragGhost" class="drag-ghost" aria-hidden="true"></div>
+              <div id="gestureCursor" class="gesture-cursor" aria-hidden="true"></div>
+            </div>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-3">
+              <div class="info-card">
+                <span class="info-label">Status</span>
+                <p id="statusText" class="info-value">White to move. Select a piece to begin.</p>
+              </div>
+              <div class="info-card">
+                <span class="info-label">Last Move</span>
+                <p id="lastMoveText" class="info-value">No move yet</p>
+              </div>
+              <div class="info-card">
+                <span class="info-label">Check State</span>
+                <p id="checkStateText" class="info-value">Kings are safe</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="grid gap-6 lg:grid-cols-2">
+            <div class="panel">
+              <div>
+                <p class="section-kicker">Captures</p>
+                <h2 class="section-title">Material advantage</h2>
+              </div>
+
+              <div class="mt-5 space-y-4">
+                <div class="capture-row">
+                  <span class="capture-label">White captures</span>
+                  <div id="capturedByWhite" class="capture-strip">
+                    <span class="empty-state">No captures yet</span>
+                  </div>
+                </div>
+                <div class="capture-row">
+                  <span class="capture-label">Black captures</span>
+                  <div id="capturedByBlack" class="capture-strip">
+                    <span class="empty-state">No captures yet</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div>
+                <p class="section-kicker">History</p>
+                <h2 class="section-title">Move notation</h2>
+              </div>
+
+              <div id="moveHistory" class="history-list">
+                <div class="empty-history">Moves will appear here as the game unfolds.</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="space-y-6">
+          <section class="panel">
+            <p class="section-kicker">Controls</p>
+            <h2 class="section-title">AI controls</h2>
+
+            <div class="mt-5 space-y-5">
+              <div>
+                <label class="control-label">Play mode</label>
+                <button id="modeAI" class="action-btn is-active mt-2 w-full" type="button">Human vs AI active</button>
+              </div>
+
+              <div>
+                <label class="control-label" for="difficultySelect">AI depth</label>
+                <select id="difficultySelect" class="select-input">
+                  <option value="2">Depth 2 - Fast</option>
+                  <option value="3" selected>Depth 3 - Balanced</option>
+                  <option value="4">Depth 4 - Deep</option>
+                </select>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <button id="undoBtn" class="action-btn" type="button">Undo</button>
+                <button id="redoBtn" class="action-btn" type="button">Redo</button>
+                <button id="restartBtn" class="action-btn" type="button">Restart</button>
+                <button id="themeToggle" class="action-btn" type="button">Dark mode</button>
+                <button id="soundToggle" class="action-btn" type="button">Sound on</button>
+                <button id="gestureToggle" class="action-btn" type="button">Enable gestures</button>
+                <button id="perspectiveToggle" class="action-btn" type="button">View black side</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <p class="section-kicker">Engine Insight</p>
+            <h2 class="section-title">Compact telemetry</h2>
+
+            <div class="insight-grid">
+              <div class="metric-card">
+                <span class="metric-label">Perspective</span>
+                <strong id="perspectiveText" class="metric-value">White side</strong>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Engine Eval</span>
+                <strong id="evaluationText" class="metric-value">0.0</strong>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Engine Source</span>
+                <strong id="engineSourceText" class="metric-value">Minimax</strong>
+              </div>
+            </div>
+
+            <div class="mt-4 info-card">
+              <span class="info-label">Engine note</span>
+              <p id="engineLineText" class="info-value">
+                Balanced starting position. Open with control of the center.
+              </p>
+            </div>
+          </section>
+
+          <section class="panel">
+            <p class="section-kicker">Gesture Control</p>
+            <h2 class="section-title">MediaPipe hands</h2>
+
+            <div class="mt-5 space-y-4">
+              <div class="camera-frame">
+                <video id="gestureVideo" class="gesture-video" autoplay muted playsinline></video>
+                <div class="camera-overlay">
+                  <span class="camera-dot"></span>
+                  <span id="gestureStateText">Camera idle</span>
+                </div>
+              </div>
+
+              <div class="info-card">
+                <span class="info-label">Gesture hints</span>
+                <p class="info-value">
+                  Pinch to pick a piece, move your hand to drag, and release to drop.
+                </p>
+              </div>
+
+              <div class="info-card">
+                <span class="info-label">Tracked square</span>
+                <p id="gestureSquareText" class="info-value">No square targeted</p>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <div id="promotionModal" class="promotion-modal" hidden>
+      <div class="promotion-card">
+        <p class="section-kicker">Promotion</p>
+        <h2 class="section-title">Choose your piece</h2>
+        <div id="promotionOptions" class="promotion-options"></div>
+        <button id="promotionCancel" class="action-btn mt-4 w-full" type="button">Cancel</button>
+      </div>
+    </div>
+
+    <div id="celebrationOverlay" class="celebration-overlay" hidden>
+      <div class="celebration-card">
+        <div id="celebrationConfetti" class="celebration-confetti" aria-hidden="true"></div>
+        <span class="section-kicker">Victory Moment</span>
+        <h2 id="celebrationTitle" class="celebration-title">White Wins</h2>
+        <p id="celebrationText" class="celebration-text">Checkmate on the board.</p>
+        <div class="celebration-actions">
+          <button id="celebrationRestart" class="action-btn is-accent" type="button">Play again</button>
+          <button id="celebrationClose" class="action-btn" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="/static/main.js"></script>
+  </body>
+</html>
