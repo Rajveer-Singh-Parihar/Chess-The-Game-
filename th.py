@@ -1,6 +1,10 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="public"), name="static")
 
 class GameState():
     def __init__(self):
@@ -16,12 +20,11 @@ class GameState():
         ]
         self.whiteToMove = True
 
-# ✅ ADD THIS LINE
 game = GameState()
 
 @app.get("/")
 def home():
-    return {"message": "Chess API running"}
+    return FileResponse("public/index.html")
 
 @app.get("/board")
 def get_board():
