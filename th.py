@@ -1,3 +1,5 @@
+from fastapi import FastAPI
+app = FastAPI()
 class GameState():
     def __init__(self):
         self.board=[
@@ -9,4 +11,7 @@ class GameState():
             ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
         self.whiteToMove=True
         self.moveLog=[]
-        
+
+@app.get("/")
+def home():
+    return {"message" : "Chess API running"}
