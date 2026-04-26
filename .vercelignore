@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+.git
+DataGrid
+image
+th.py
+th2.py
+*.db
