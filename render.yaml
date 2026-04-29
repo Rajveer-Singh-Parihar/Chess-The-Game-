@@ -1,21 +1,11 @@
 services:
   - type: web
-    name: chess-game
+    name: chess-the-game
     env: python
+    pythonVersion: "3.12"
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn api.index:app --host 0.0.0.0 --port $PORT"
     staticPublicPath: /static
-    routes:
-      - path: /static
-        source: ./public
-
-services:
-  - type: web
-    name: chess-the-game
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn api.index:app --host 0.0.0.0 --port $PORT"
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.0
-
+      - key: PORT
+        value: "8000"
