@@ -13,7 +13,7 @@ import chess
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Premium Chess API", version="1.0.0")
@@ -359,14 +359,29 @@ def ensure_room_membership(room: RoomRecord, player_token: str) -> str:
     raise HTTPException(status_code=403, detail="You are not a member of this room.")
 
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="public"), name="static")
+# Mount static files from public directory
+static_dir = os.path.join(os.path.dirname(__file__), "..", "public")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 # Serve index.html for root and unknown routes
 @app.get("/")
 def root() -> FileResponse:
-    return FileResponse("public/index.html")
+    index_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    # Fallback
+    return HTMLResponse("""
+    <!DOCTYPE html>
+    <html>
+    <head><title>Chess - Loading...</title></head>
+    <body>
+        <p>Loading Chess Game...</p>
+        <script>window.location.href = '/static/index.html'</script>
+    </body>
+    </html>
+    """)
 
 
 @app.get("/health")
